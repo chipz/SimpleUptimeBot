@@ -48,8 +48,7 @@ func sendTelegramBotMessage(message string, chatID int64) {
 
 
 		log.Printf("Have chat id %s", chatID)
-		msg := tgbotapi.NewMessage(chatID, "asdfasdf")
-		msg.Text = "gagal nih!!! " + message
+		msg := tgbotapi.NewMessage(chatID, message)
 		bot.Send(msg)
 	} else {
 		log.Print("Chat id still 0")
@@ -57,26 +56,11 @@ func sendTelegramBotMessage(message string, chatID int64) {
 }
 
 func processor(update tgbotapi.Update, bot *tgbotapi.BotAPI) {
-	if update.Message != nil {
-		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-
-		chatID := update.Message.Chat.ID
-		msgID := update.Message.MessageID
-		msg := tgbotapi.NewMessage(chatID, update.Message.Text)
-		msg.ReplyToMessageID = msgID
-		msg.Text = "echo " + update.Message.Text
-		bot.Send(msg)
-	}
-
-	if update.Message == nil {
-		return
-	}
-
 	// Parse responses
 	response := strings.Split(update.Message.Text, " ")
 
 	if response[0] == "" {
-		sendTelegramBotMessage("Please enter in a command:\nstock [exchange] [symbol], trends", update.Message.Chat.ID)
+		sendTelegramBotMessage("Please enter in a command:\nmonitor [url]", update.Message.Chat.ID)
 		return
 	}
 

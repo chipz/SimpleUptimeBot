@@ -54,18 +54,11 @@ func MonitorWebsite(website Website) {
 	code, err := GetStatusCode(website.Url)
 
 	if code == 200 {
-		var x = website.Url + " success"
-		fmt.Println(err)
-		sendTelegramBotMessage(x, website.ChatId)
-	} else if code >= 400 {
-		fmt.Println(err)
-		fmt.Println("Sending failure notification about:\n" + website.Url)
-		var y = website.Url + " failed"
-		sendTelegramBotMessage(y, website.ChatId)
+		log.Printf("url %s is okay", website.Url)
 	} else {
 		fmt.Println(err)
 		fmt.Println("Sending failure notification about:\n" + website.Url)
-		var y = website.Url + " hmmmm"
+		y := fmt.Sprintf("Got %s with status code (%d). Please check", website.Url, code)
 		sendTelegramBotMessage(y, website.ChatId)
 	}
 
