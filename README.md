@@ -21,3 +21,5 @@ the existing services will be overkill for something as simple as this.
 ##TODO:
 - Use a persistent database to manage the data
 - Add mode to monitor certain port
+- Add checking for valid url
+- Add command to `list` and `remove` the added urls
