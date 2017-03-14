@@ -2,6 +2,7 @@ package main
 
 import (
 	"gopkg.in/telegram-bot-api.v4"
+	"net/url"
 	"log"
 	"strings"
 	"fmt"
@@ -66,23 +67,27 @@ func processor(update tgbotapi.Update) {
 	}
 
 	switch strings.ToLower(response[0]) {
-	case "monitor":
-		//@TODO need to check for valid url
-		var url = response[1]
-		var newWebsite = Website{Url: url, Interval: 5, ChatId: update.Message.Chat.ID}
-		Websites = append(Websites, newWebsite)
+	case "/monitor":
+		_, err := url.ParseRequestURI(response[1])
+		if err != nil {
+			sendTelegramBotMessage("Invalid url: " + response[1], update.Message.Chat.ID)
+		} else {
+			var targetUrl = response[1]
+			var newWebsite = Website{Url: targetUrl, Interval: 5, ChatId: update.Message.Chat.ID}
+			Websites = append(Websites, newWebsite)
 
-		sendTelegramBotMessage("Added: " + newWebsite.Url, update.Message.Chat.ID)
+			sendTelegramBotMessage("Added: " + newWebsite.Url, update.Message.Chat.ID)
+		}
 		break
-	case "remove":
-		var url = response[1]
-		var tobeRemovedWebsite = Website{Url: url, Interval: 5, ChatId: update.Message.Chat.ID}
+	case "/remove":
+		var targetUrl = response[1]
+		var tobeRemovedWebsite = Website{Url: targetUrl, Interval: 5, ChatId: update.Message.Chat.ID}
 		Websites = remove(Websites, tobeRemovedWebsite)
 		log.Printf("removing %s", update.Message.Text)
 
 		sendTelegramBotMessage("Removed: " + tobeRemovedWebsite.Url, update.Message.Chat.ID)
 		break
-	case "list":
+	case "/list":
 		a := []string{}
 		for _, x := range Websites {
 			if x.ChatId == update.Message.Chat.ID {
