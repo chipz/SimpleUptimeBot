@@ -24,7 +24,6 @@ func StartBot(){
 
 	updates, err := bot.GetUpdatesChan(u)
 
-
 	for {
 		for update := range updates {
 			processor(update)
@@ -46,8 +45,6 @@ func sendTelegramBotMessage(message string, chatID int64) {
 
 		u := tgbotapi.NewUpdate(0)
 		u.Timeout = 60
-
-
 
 		log.Printf("Have chat id %s", chatID)
 		msg := tgbotapi.NewMessage(chatID, message)
@@ -88,13 +85,13 @@ func processor(update tgbotapi.Update) {
 		sendTelegramBotMessage("Removed: " + tobeRemovedWebsite.Url, update.Message.Chat.ID)
 		break
 	case "/list":
-		a := []string{}
+		urls := []string{}
 		for _, x := range Websites {
 			if x.ChatId == update.Message.Chat.ID {
-				a = append(a, x.Url)
+				urls = append(urls, x.Url)
 			}
 		}
-		str := fmt.Sprintf("list: %s", a)
+		str := fmt.Sprintf("list: %s", urls)
 		log.Printf("printing value %s", str)
 		sendTelegramBotMessage(str, update.Message.Chat.ID)
 		break
