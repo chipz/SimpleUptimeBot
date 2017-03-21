@@ -6,6 +6,8 @@ import (
 	"log"
 	"strings"
 	"fmt"
+	"github.com/satori/go.uuid"
+	"strconv"
 )
 
 func StartBot(){
@@ -70,7 +72,7 @@ func processor(update tgbotapi.Update) {
 			sendTelegramBotMessage("Invalid url: " + response[1], update.Message.Chat.ID)
 		} else {
 			var targetUrl = response[1]
-			var newWebsite = Website{Url: targetUrl, Interval: 5, ChatId: update.Message.Chat.ID}
+			var newWebsite = Website{Id: uuid.NewV1(), Url: targetUrl, Interval: 5, ChatId: update.Message.Chat.ID}
 			Websites = append(Websites, newWebsite)
 
 			sendTelegramBotMessage("Added: " + newWebsite.Url, update.Message.Chat.ID)
@@ -78,21 +80,28 @@ func processor(update tgbotapi.Update) {
 		break
 	case "/remove":
 		var targetUrl = response[1]
-		var tobeRemovedWebsite = Website{Url: targetUrl, Interval: 5, ChatId: update.Message.Chat.ID}
-		Websites = remove(Websites, tobeRemovedWebsite)
-		log.Printf("removing %s", update.Message.Text)
+		//var tobeRemovedWebsite = Website{Url: targetUrl, Interval: 5, ChatId: update.Message.Chat.ID}
+		//Websites = remove(Websites, tobeRemovedWebsite)
+		i, err := strconv.Atoi(targetUrl)
+		if (err != nil) {
+			sendTelegramBotMessage("invalid integer " + targetUrl, update.Message.Chat.ID)
+			break
+		}
+		Websites = removeIndex(Websites, i)
+		log.Printf("removing %s", i)
 
-		sendTelegramBotMessage("Removed: " + tobeRemovedWebsite.Url, update.Message.Chat.ID)
+		sendTelegramBotMessage(fmt.Sprintf("Removed: %v", i), update.Message.Chat.ID)
 		break
 	case "/list":
 		urls := []string{}
-		for _, x := range Websites {
+		for i, x := range Websites {
 			if x.ChatId == update.Message.Chat.ID {
-				urls = append(urls, x.Url)
+				stri := strconv.Itoa(i)
+				urls = append(urls, x.Url + " " + stri)
 			}
 		}
 		str := fmt.Sprintf("list: %s", urls)
-		log.Printf("printing value %s", str)
+		log.Printf("printing value %s", Websites)
 		sendTelegramBotMessage(str, update.Message.Chat.ID)
 		break
 	}
@@ -100,11 +109,15 @@ func processor(update tgbotapi.Update) {
 }
 
 
-func remove(s []Website, r Website) []Website {
-	for i, v := range s {
-		if v == r {
-			return append(s[:i], s[i+1:]...)
-		}
-	}
-	return s
+//func remove(s []Website, r Website) []Website {
+//	for i, v := range s {
+//		if v == r {
+//			return append(s[:i], s[i+1:]...)
+//		}
+//	}
+//	return s
+//}
+
+func removeIndex(slice []Website, s int) []Website {
+	return append(slice[:s], slice[s+1:]...)
 }
