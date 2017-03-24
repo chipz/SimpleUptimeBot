@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"log"
-	"sync"
 	"reflect"
 )
 
@@ -21,16 +20,19 @@ var TestWebsites = []Website{
 	//Website{Url: `https://news.ycombinator.com/item?id=13816627`, Interval: 10, ChatId: 0},
 }
 
+var c1 chan Website = make(chan Website)
+var killingPills chan bool = make(chan bool)
+var webs chan []Website = make(chan []Website)
+
 func main() {
 	Websites = TestWebsites
 	go StartBot()
-	for {
-		if(!reflect.DeepEqual(TempWebsites, Websites)){
-			go StartWebsiteMonitors()
-			TempWebsites = Websites
-		}
-	}
+	go MonitorListOfWebsite()
+	go MonitorWebsitesChannel()
 
+	select {
+
+	}
 }
 
 func GetToken() string {
@@ -47,29 +49,47 @@ func GetToken() string {
 	return ""
 }
 
-func StartWebsiteMonitors() {
-	var wg sync.WaitGroup
-	log.Printf("websites now: %s", Websites)
-	for _, website := range Websites {
-		if !WebsiteExist(website, runningWebsites){
-			wg.Add(1)
-			time.Sleep(10 * time.Millisecond)
-			go func(website Website) {
-				defer wg.Done()
-				MonitorWebsiteLoop(website)
-			}(website)
+func MonitorListOfWebsite(){
+	for {
+		lw := <- webs
+		log.Println("got list web")
+		if(!reflect.DeepEqual(TempWebsites, lw)){
+			for _, website := range lw {
+				time.Sleep(10 * time.Millisecond)
+				go func(website Website) {
+					log.Println("sending killing pills..")
+					killingPills <- true
+				}(website)
+			}
+			TempWebsites = lw
+			for _, website := range lw {
+				time.Sleep(600 * time.Millisecond)
+				go func(website Website) {
+					log.Println("sending monitoring task..")
+					go MonitorWebsitesChannel()
+					c1 <- website
+				}(website)
+			}
 		}
 	}
-	defer wg.Wait()
 }
 
-func MonitorWebsiteLoop(website Website) {
-	for WebsiteExist(website, Websites) && !WebsiteExist(website, runningWebsites) {
-		runningWebsites = append(runningWebsites, website)
-		MonitorWebsite(website)
-		log.Printf("waiting to check again for: %v second(s)", website.Interval)
-		time.Sleep(time.Duration(website.Interval) * time.Second)
-		log.Println("done waiting")
+func MonitorWebsitesChannel() {
+	for {
+		select {
+			case <- killingPills:
+				log.Println("Killing me softly..")
+				return
+			case website := <- c1:
+				log.Println("Got monitoring task..")
+				MonitorWebsite(website)
+				log.Printf("waiting to check again for: %v second(s)", website.Interval)
+				time.Sleep(time.Duration(website.Interval) * time.Second)
+				log.Println("done waiting")
+				go func(website Website) {
+					c1 <- website
+				}(website)
+		}
 	}
 }
 
@@ -90,14 +110,5 @@ func GetStatusCode(url string) (int, error) {
 	res, err := http.Get(url)
 	fmt.Println("url: " + url + "--> " + res.Status)
 	return res.StatusCode, err
-}
-
-func WebsiteExist(websiteToCheck Website, websites []Website) bool {
-	for _, existingWebsite := range websites {
-		if existingWebsite == websiteToCheck {
-			return true
-		}
-	}
-	return false
 }
 

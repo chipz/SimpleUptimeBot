@@ -75,6 +75,8 @@ func processor(update tgbotapi.Update) {
 			var newWebsite = Website{Id: uuid.NewV1(), Url: targetUrl, Interval: 5, ChatId: update.Message.Chat.ID}
 			Websites = append(Websites, newWebsite)
 
+			webs <- Websites
+
 			sendTelegramBotMessage("Added: " + newWebsite.Url, update.Message.Chat.ID)
 		}
 		break
@@ -88,6 +90,9 @@ func processor(update tgbotapi.Update) {
 			break
 		}
 		Websites = removeIndex(Websites, i)
+
+		webs <- Websites
+
 		log.Printf("removing %s", i)
 
 		sendTelegramBotMessage(fmt.Sprintf("Removed: %v", i), update.Message.Chat.ID)
