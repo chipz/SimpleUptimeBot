@@ -30,6 +30,7 @@ func main() {
 	go MonitorListOfWebsite()
 	go MonitorWebsitesChannel()
 
+	//to keep the program running
 	select {
 
 	}
@@ -49,12 +50,14 @@ func GetToken() string {
 	return ""
 }
 
+
+//list of websites to be monitored
 func MonitorListOfWebsite(){
 	for {
 		lw := <- webs
 		log.Println("got list web")
 		if(!reflect.DeepEqual(TempWebsites, lw)){
-			for _, website := range lw {
+			for _, website := range TempWebsites {
 				time.Sleep(10 * time.Millisecond)
 				go func(website Website) {
 					log.Println("sending killing pills..")
@@ -74,6 +77,7 @@ func MonitorListOfWebsite(){
 	}
 }
 
+//channel to keep monitoring the website
 func MonitorWebsitesChannel() {
 	for {
 		select {

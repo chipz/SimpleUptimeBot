@@ -10,6 +10,7 @@ import (
 	"strconv"
 )
 
+//Start the Telegram bot
 func StartBot(){
 	bot, err := tgbotapi.NewBotAPI(GetToken())
 	if err != nil {
