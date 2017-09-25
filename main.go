@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"log"
-	"reflect"
+	//"reflect"
 )
 
 // start it as:
@@ -29,6 +29,7 @@ func main() {
 	go StartBot()
 	go MonitorListOfWebsite()
 	go MonitorWebsitesChannel()
+	go Perulangan()
 
 	//to keep the program running
 	select {
@@ -51,49 +52,76 @@ func GetToken() string {
 }
 
 
+func Perulangan() {
+	for i := 1; i <= 10; i++ {
+		go func(val int) {
+			time.Sleep(600 * time.Millisecond)
+			fmt.Println(val)
+		}(i)
+	}
+}
+
+
 //list of websites to be monitored
 func MonitorListOfWebsite(){
-	for {
+	//for {
+		//lw := <- webs
+		//log.Println("got list web")
+		//if(!reflect.DeepEqual(TempWebsites, lw)){
+		//	for _, website := range TempWebsites {
+		//		time.Sleep(10 * time.Millisecond)
+		//		go func(website Website) {
+		//			log.Println("sending killing pills..")
+		//			killingPills <- true
+		//		}(website)
+		//	}
+		//	TempWebsites = lw
+		//	for _, website := range lw {
+		//		time.Sleep(600 * time.Millisecond)
+		//		go func(website Website) {
+		//			log.Println("sending monitoring task..")
+		//			go MonitorWebsitesChannel()
+		//			c1 <- website
+		//		}(website)
+		//	}
+		//}
+
+
+	//}
+	for i:= 0; i< 1000; i++ {
 		lw := <- webs
 		log.Println("got list web")
-		if(!reflect.DeepEqual(TempWebsites, lw)){
-			for _, website := range TempWebsites {
-				time.Sleep(10 * time.Millisecond)
-				go func(website Website) {
-					log.Println("sending killing pills..")
-					killingPills <- true
-				}(website)
-			}
-			TempWebsites = lw
-			for _, website := range lw {
-				time.Sleep(600 * time.Millisecond)
-				go func(website Website) {
-					log.Println("sending monitoring task..")
-					go MonitorWebsitesChannel()
-					c1 <- website
-				}(website)
-			}
+		for _, website := range lw {
+			time.Sleep(600 * time.Millisecond)
+			go func(website Website) {
+				log.Println("sending monitoring task..")
+				//go MonitorWebsitesChannel()
+				//c1 <- website
+				log.Printf("waiting to check again for: %v second(s)", website.Interval)
+				time.Sleep(time.Duration(website.Interval) * time.Second)
+				log.Println("done waiting")
+				MonitorWebsite(website)
+			}(website)
 		}
+		log.Print(i)
 	}
 }
 
 //channel to keep monitoring the website
 func MonitorWebsitesChannel() {
-	for {
-		select {
-			case <- killingPills:
-				log.Println("Killing me softly..")
-				return
-			case website := <- c1:
-				log.Println("Got monitoring task..")
-				MonitorWebsite(website)
-				log.Printf("waiting to check again for: %v second(s)", website.Interval)
-				time.Sleep(time.Duration(website.Interval) * time.Second)
-				log.Println("done waiting")
-				go func(website Website) {
-					c1 <- website
-				}(website)
-		}
+	select {
+	case <- killingPills:
+		log.Println("Killing me softly..")
+		return
+	case website := <- c1:
+		log.Println("Got monitoring task..")
+		MonitorWebsite(website)
+		log.Printf("waiting to check again for: %v second(s)", website.Interval)
+		time.Sleep(time.Duration(website.Interval) * time.Second)
+		log.Println("done waiting")
+		go func(website Website) {
+			c1 <- website
+		}(website)
 	}
 }
 

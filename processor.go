@@ -82,6 +82,10 @@ func processor(update tgbotapi.Update) {
 		}
 		break
 	case "/remove":
+		if (len(response) <= 1) {
+			sendTelegramBotMessage("invalid remove command", update.Message.Chat.ID)
+			break
+		}
 		var targetUrl = response[1]
 		//var tobeRemovedWebsite = Website{Url: targetUrl, Interval: 5, ChatId: update.Message.Chat.ID}
 		//Websites = remove(Websites, tobeRemovedWebsite)
