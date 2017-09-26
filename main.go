@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"os"
 	"log"
-	//"reflect"
+	"github.com/reactivex/rxgo/observer"
+	"github.com/reactivex/rxgo/observable"
+	"github.com/reactivex/rxgo/handlers"
 )
 
 // start it as:
@@ -20,20 +22,46 @@ var TestWebsites = []Website{
 	//Website{Url: `https://news.ycombinator.com/item?id=13816627`, Interval: 10, ChatId: 0},
 }
 
-var c1 chan Website = make(chan Website)
-var killingPills chan bool = make(chan bool)
 var webs chan []Website = make(chan []Website)
 
 func main() {
 	Websites = TestWebsites
 	go StartBot()
-	go MonitorListOfWebsite()
-	go MonitorWebsitesChannel()
-	go Perulangan()
 
-	//to keep the program running
-	select {
+	ticker := time.NewTicker(5 * time.Second)
+	pchan := make(chan interface{})
 
+	go func() {
+		for t := range ticker.C {
+			log.Println("Tick at", t)
+			select {
+			case web := <- pchan:
+				log.Printf("Got list website %v", web.([]Website))
+				Websites = web.([]Website)
+			default:
+				log.Printf("no activity")
+				for _, element := range Websites {
+					go func(website Website) {
+						log.Printf("Got website %v", website.Url)
+						MonitorWebsite(website)
+					}(element)
+				}
+			}
+		}
+	}()
+
+	for {
+		lw := <- webs
+
+		source := observable.Just(lw)
+
+		onNext := handlers.NextFunc(func(item interface{}) {
+			if item, ok := item.([]Website); ok {
+				pchan <- item
+			}
+		})
+
+		_ = source.Subscribe(observer.New(onNext))
 	}
 }
 
@@ -49,80 +77,6 @@ func GetToken() string {
 	}
 	log.Fatal("token not set. set it as commandline arg or in BOT_TOKEN envvar")
 	return ""
-}
-
-
-func Perulangan() {
-	for i := 1; i <= 10; i++ {
-		go func(val int) {
-			time.Sleep(600 * time.Millisecond)
-			fmt.Println(val)
-		}(i)
-	}
-}
-
-
-//list of websites to be monitored
-func MonitorListOfWebsite(){
-	//for {
-		//lw := <- webs
-		//log.Println("got list web")
-		//if(!reflect.DeepEqual(TempWebsites, lw)){
-		//	for _, website := range TempWebsites {
-		//		time.Sleep(10 * time.Millisecond)
-		//		go func(website Website) {
-		//			log.Println("sending killing pills..")
-		//			killingPills <- true
-		//		}(website)
-		//	}
-		//	TempWebsites = lw
-		//	for _, website := range lw {
-		//		time.Sleep(600 * time.Millisecond)
-		//		go func(website Website) {
-		//			log.Println("sending monitoring task..")
-		//			go MonitorWebsitesChannel()
-		//			c1 <- website
-		//		}(website)
-		//	}
-		//}
-
-
-	//}
-	for i:= 0; i< 1000; i++ {
-		lw := <- webs
-		log.Println("got list web")
-		for _, website := range lw {
-			time.Sleep(600 * time.Millisecond)
-			go func(website Website) {
-				log.Println("sending monitoring task..")
-				//go MonitorWebsitesChannel()
-				//c1 <- website
-				log.Printf("waiting to check again for: %v second(s)", website.Interval)
-				time.Sleep(time.Duration(website.Interval) * time.Second)
-				log.Println("done waiting")
-				MonitorWebsite(website)
-			}(website)
-		}
-		log.Print(i)
-	}
-}
-
-//channel to keep monitoring the website
-func MonitorWebsitesChannel() {
-	select {
-	case <- killingPills:
-		log.Println("Killing me softly..")
-		return
-	case website := <- c1:
-		log.Println("Got monitoring task..")
-		MonitorWebsite(website)
-		log.Printf("waiting to check again for: %v second(s)", website.Interval)
-		time.Sleep(time.Duration(website.Interval) * time.Second)
-		log.Println("done waiting")
-		go func(website Website) {
-			c1 <- website
-		}(website)
-	}
 }
 
 func MonitorWebsite(website Website) {
