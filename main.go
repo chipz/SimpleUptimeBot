@@ -1,14 +1,10 @@
 package main
 
 import (
-	"time"
 	"fmt"
-	"net/http"
-	"os"
 	"log"
-	"github.com/reactivex/rxgo/observer"
-	"github.com/reactivex/rxgo/observable"
-	"github.com/reactivex/rxgo/handlers"
+	"net/http"
+	"time"
 )
 
 // start it as:
@@ -50,33 +46,28 @@ func main() {
 		}
 	}()
 
-	for {
-		lw := <- webs
+	//for {
+	//	lw := <- webs
+	//
+	//	source := observable.Just(lw)
+	//
+	//	onNext := handlers.NextFunc(func(item interface{}) {
+	//		if item, ok := item.([]Website); ok {
+	//			pchan <- item
+	//		}
+	//	})
+	//
+	//	_ = source.Subscribe(observers.New(onNext))
+	//}
 
-		source := observable.Just(lw)
 
-		onNext := handlers.NextFunc(func(item interface{}) {
-			if item, ok := item.([]Website); ok {
-				pchan <- item
-			}
-		})
-
-		_ = source.Subscribe(observer.New(onNext))
-	}
-}
-
-func GetToken() string {
-	if len(os.Args) > 1 {
-		log.Println("got token from command line arg")
-		return os.Args[1]
-	}
-	v := os.Getenv("BOT_TOKEN")
-	if v != "" {
-		log.Println("got token from envvar")
-		return v
-	}
-	log.Fatal("token not set. set it as commandline arg or in BOT_TOKEN envvar")
-	return ""
+	//for {
+	//	lw := <- webs
+	//
+	//	flavio := make(chan string)
+	//
+	//
+	//}
 }
 
 func MonitorWebsite(website Website) {

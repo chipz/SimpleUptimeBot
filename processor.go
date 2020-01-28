@@ -1,9 +1,10 @@
 package main
 
 import (
-	"gopkg.in/telegram-bot-api.v4"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"net/url"
 	"log"
+	"os"
 	"strings"
 	"fmt"
 	"github.com/satori/go.uuid"
@@ -34,8 +35,22 @@ func StartBot(){
 	}
 }
 
+func GetToken() string {
+	if len(os.Args) > 1 {
+		log.Println("got token from command line arg")
+		return os.Args[1]
+	}
+	v := os.Getenv("BOT_TOKEN")
+	if v != "" {
+		log.Println("got token from envvar")
+		return v
+	}
+	log.Fatal("token not set. set it as commandline arg or in BOT_TOKEN envvar")
+	return ""
+}
+
 func sendTelegramBotMessage(message string, chatID int64) {
-	if (chatID != 0) {
+	if chatID != 0 {
 		bot, err := tgbotapi.NewBotAPI(GetToken())
 		if err != nil {
 			log.Panic(err)
@@ -51,7 +66,7 @@ func sendTelegramBotMessage(message string, chatID int64) {
 
 		log.Printf("Have chat id %s", chatID)
 		msg := tgbotapi.NewMessage(chatID, message)
-		bot.Send(msg)
+		_, _ = bot.Send(msg)
 	} else {
 		log.Print("Chat id still 0")
 	}
@@ -73,7 +88,8 @@ func processor(update tgbotapi.Update) {
 			sendTelegramBotMessage("Invalid url: " + response[1], update.Message.Chat.ID)
 		} else {
 			var targetUrl = response[1]
-			var newWebsite = Website{Id: uuid.NewV1(), Url: targetUrl, Interval: 5, ChatId: update.Message.Chat.ID}
+			var u, _ = uuid.NewV4()
+			var newWebsite = Website{Id: u, Url: targetUrl, Interval: 5, ChatId: update.Message.Chat.ID}
 			Websites = append(Websites, newWebsite)
 
 			webs <- Websites
