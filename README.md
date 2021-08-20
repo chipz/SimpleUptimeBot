@@ -22,7 +22,8 @@ I have services that needs to the uptime should be monitored, and give me a repo
 once the service is **down**. I want the report will be in Telegram. Using
 the existing services will be overkill for something as simple as this.
 
-##TODO:
+
+## TODO:
 - Use a persistent database to manage the data
 - Add mode to monitor certain port
 - Add checking for valid url
